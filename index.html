@@ -31,10 +31,10 @@ input[type=number]{text-align:center}
 .battle-bg{background:linear-gradient(180deg,#1a0a3e 0,#2d1050 40%,#3a2060 70%,#1a3020 100%)}
 .battle-top{width:100%;display:flex;justify-content:space-between;padding:10px 16px;font-size:13px;color:#ccbbff}
 .field{flex:1;width:100%;display:flex;align-items:center;justify-content:space-around;padding:10px;position:relative}
-.char-slot{display:flex;flex-direction:column;align-items:center;width:165px;transition:transform .15s}
-.char-slot.lunge-left{transform:translateX(-30px)}
-.char-slot.lunge-right{transform:translateX(30px)}
-.char-slot.shake{animation:shake .3s}
+.char-slot{display:flex;flex-direction:column;align-items:center;width:165px}.char-slot.atk-lunge{animation:atkLunge .3s ease}.char-slot.atk-slam{animation:atkSlam .4s ease}.char-slot.atk-drain{animation:atkDrain .5s ease}.char-slot.hit-shake{animation:hitShake .35s ease}.char-slot.def-glow{animation:defGlow .6s ease;filter:drop-shadow(0 0 10px cyan)}
+
+
+
 .hp-wrap{width:100%;margin-bottom:6px}
 .hp-name{font-size:12px;color:#ccbbff;text-align:center;display:block}
 .hp-outer{width:100%;height:10px;background:#333;border-radius:5px;overflow:hidden}
@@ -52,7 +52,14 @@ input[type=number]{text-align:center}
 .dmg-pop{color:#ff6644;font-size:22px;font-weight:bold;animation:popUp .8s forwards}
 .dmg-pop.heal{color:#44ff44}
 @keyframes popUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-30px)}}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+@keyframes atkLunge{0%{transform:translateX(0)}40%{transform:translateX(35px)}100%{transform:translateX(0)}}
+@keyframes atkSlam{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-20px) scale(1.1)}60%{transform:translateY(10px) scale(0.95)}100%{transform:translateY(0) scale(1)}}
+@keyframes atkDrain{0%{filter:brightness(1)}50%{filter:brightness(1.5) drop-shadow(0 0 10px #4f4)}100%{filter:brightness(1)}}
+@keyframes hitShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-8px)}30%{transform:translateX(8px)}45%{transform:translateX(-5px)}60%{transform:translateX(5px)}75%{transform:translateX(-2px)}}
+@keyframes defGlow{0%{filter:drop-shadow(0 0 0 cyan)}50%{filter:drop-shadow(0 0 15px cyan) brightness(1.1)}100%{filter:drop-shadow(0 0 0 cyan)}}
+.fireball{position:absolute;width:20px;height:20px;background:radial-gradient(circle,#f60,#f30);border-radius:50%;z-index:5;animation:fbFly .5s ease-out forwards;box-shadow:0 0 15px #f40}
+@keyframes fbFly{0%{left:60%;opacity:0;transform:scale(0.3)}30%{opacity:1;transform:scale(1)}100%{left:25%;opacity:0;transform:scale(0.5)}}
+
 .skill-bar{width:100%;display:flex;justify-content:space-around;padding:12px 10px;gap:10px}
 .skill-btn{flex:1;height:52px;border-radius:12px;border:2px solid rgba(255,255,255,0.18);background:rgba(20,10,50,0.7);color:#fff;font-size:14px;font-weight:bold;cursor:pointer}
 .skill-btn:disabled{opacity:.35}
@@ -140,12 +147,15 @@ function updateHP(){const pp=Math.max(Math.round(player.hp/player.maxHp*100),0),
 function setBtns(v){document.querySelectorAll('.skill-btn').forEach(b=>b.disabled=v)}
 function log(msg){const l=document.createElement('span');l.className='log-text';l.textContent=msg;$('logArea').appendChild(l);while($('logArea').children.length>4)$('logArea').removeChild($('logArea').firstChild)}
 function popDmg(v,hl){const d=document.createElement('span');d.className='dmg-pop'+(hl?' heal':'');d.textContent=(hl?'+':'-')+v;$('logArea').appendChild(d);setTimeout(()=>d.remove(),800)}
-function lunge(who,cb){const el=$(who+'Slot');el.classList.add(who==='player'?'lunge-right':'lunge-left');setTimeout(()=>{el.classList.remove(who==='player'?'lunge-right':'lunge-left');cb()},250)}
-function shake(who,cb){const el=$(who+'Slot');el.classList.add('shake');setTimeout(()=>{el.classList.remove('shake');cb()},300)}
-function playerAction(si){if(animating||!enemy)return;animating=!0;setBtns(!0);if(si===0){log('你使用了普通攻击！');lunge('player',()=>doHit(calcDmg(player.atk,enemy.def),'对'+enemy.name+'造成了'))}else if(si===1){if(player.hp<=10){animating=!1;setBtns(!1);return log('HP不足10！')}player.hp-=10;updateHP();log('你使用了强力一击！（消耗10HP）');lunge('player',()=>doHit(calcDmg(Math.floor(player.atk*1.8),enemy.def),'强力一击造成'))}else{if(player.hp<=10){animating=!1;setBtns(!1);return log('HP不足10！')}player.hp-=10;updateHP();log('你使用了生命汲取！（消耗10HP）');lunge('player',()=>{const h=Math.floor(Math.random()*31)+20;player.hp=Math.min(player.hp+h,player.maxHp);updateHP();popDmg(h,1);log('生命汲取恢复了'+h+'点HP！');afterPA()})}}
+function lunge(who,type,cb){const el=$(who+'Slot');const cls=type==='slam'?'atk-slam':type==='drain'?'atk-drain':'atk-lunge';el.classList.add(cls);setTimeout(()=>{el.classList.remove(cls);cb()},type==='slam'?400:type==='drain'?500:300)}
+function shake(who,cb){const el=$(who+'Slot');el.classList.add('hit-shake');setTimeout(()=>{el.classList.remove('hit-shake');cb()},350)}
+function playerAction(si){if(animating||!enemy)return;animating=!0;setBtns(!0);if(si===0){log('你使用了普通攻击！');lunge('player','normal',()=>doHit(calcDmg(player.atk,enemy.def),'对'+enemy.name+'造成了'))}else if(si===1){if(player.hp<=10){animating=!1;setBtns(!1);return log('HP不足10！')}player.hp-=10;updateHP();log('你使用了强力一击！（消耗10HP）');lunge('player','slam',()=>doHit(calcDmg(Math.floor(player.atk*1.8),enemy.def),'强力一击造成'))}else{if(player.hp<=10){animating=!1;setBtns(!1);return log('HP不足10！')}player.hp-=10;updateHP();log('你使用了生命汲取！（消耗10HP）');lunge('player','drain',()=>{const h=Math.floor(Math.random()*31)+20;player.hp=Math.min(player.hp+h,player.maxHp);updateHP();popDmg(h,1);log('生命汲取恢复了'+h+'点HP！');afterPA()})}}
 function doHit(dmg,prefix){if(enemy.defending){const o=dmg;dmg=Math.max(Math.floor(dmg/2),1);enemy.defending=!1;if(o!==dmg)log('防御姿态减半了伤害！')}enemy.hp=Math.max(enemy.hp-dmg,0);updateHP();popDmg(dmg,0);log(prefix+dmg+'点伤害！');shake('enemy',()=>afterPA())}
 function afterPA(){if(enemy.hp<=0){onWin();return}setTimeout(()=>enemyTurn(),400)}
-function enemyTurn(){const act=Math.random()>=0.5?enemy.skill:'普通攻击';if(act==='普通攻击'){const d=calcDmg(enemy.atk,player.def);player.hp=Math.max(player.hp-d,0);log('敌人使用了普通攻击！');lunge('enemy',()=>{updateHP();popDmg(d,0);log('受到'+d+'点伤害！');shake('player',afterEA)})}else if(act==='猛击'){const d=calcDmg(Math.floor(enemy.atk*1.5),player.def);player.hp=Math.max(player.hp-d,0);log('敌人使用了猛击！（ATK*1.5）');lunge('enemy',()=>{updateHP();popDmg(d,0);log('猛击造成'+d+'点伤害！');shake('player',afterEA)})}else if(act==='快速攻击'){let d=0;for(let i=0;i<2;i++){const t=calcDmg(Math.floor(enemy.atk/2),player.def);d+=t;player.hp=Math.max(player.hp-t,0)}log('敌人使用了快速攻击！');lunge('enemy',()=>{updateHP();popDmg(d,0);log('快速攻击造成'+d+'点伤害！');shake('player',afterEA)})}else if(act==='防御姿态'){enemy.defending=!0;log('敌人进入了防御姿态！（下次受伤减半）');setTimeout(afterEA,700)}else if(act==='火球术'){const d=calcDmg(Math.floor(enemy.atk*1.8),player.def);player.hp=Math.max(player.hp-d,0);log('敌人使用了火球术！（ATK*1.8）');setTimeout(()=>{updateHP();popDmg(d,0);log('火球术造成'+d+'点伤害！');shake('player',afterEA)},400)}}
+function enemyTurn(){const act=Math.random()>=0.5?enemy.skill:'普通攻击';if(act==='普通攻击'){const d=calcDmg(enemy.atk,player.def);player.hp=Math.max(player.hp-d,0);log('敌人使用了普通攻击！');lunge('enemy','normal',()=>{updateHP();popDmg(d,0);log('受到'+d+'点伤害！');shake('player',afterEA)})}else if(act==='猛击'){const d=calcDmg(Math.floor(enemy.atk*1.5),player.def);player.hp=Math.max(player.hp-d,0);log('敌人使用了猛击！（ATK*1.5）');lunge('enemy','slam',()=>{updateHP();popDmg(d,0);log('猛击造成'+d+'点伤害！');shake('player',afterEA)})}else if(act==='快速攻击'){let d=0;for(let i=0;i<2;i++){const t=calcDmg(Math.floor(enemy.atk/2),player.def);d+=t;player.hp=Math.max(player.hp-t,0)}log('敌人使用了快速攻击！');lunge('enemy','normal',()=>{updateHP();popDmg(d,0);log('快速攻击造成'+d+'点伤害！');shake('player',afterEA)})}else if(act==='防御姿态'){enemy.defending=!0;const ed=$('enemySlot');ed.classList.add('def-glow');log('敌人进入了防御姿态！（下次受伤减半）');setTimeout(()=>{ed.classList.remove('def-glow');afterEA()},700)}else if(act==='火球术'){const d=calcDmg(Math.floor(enemy.atk*1.8),player.def);player.hp=Math.max(player.hp-d,0);log('敌人使用了火球术！（ATK*1.8）');
+const fb=document.createElement('div');fb.className='fireball';
+document.querySelector('.field').appendChild(fb);
+setTimeout(()=>{fb.remove();updateHP();popDmg(d,0);log('火球术造成'+d+'点伤害！');shake('player',afterEA)},500)}}
 function afterEA(){if(player.hp<=0){onLose();return}round++;$('roundNum').textContent=round;animating=!1;setBtns(!1);log('第'+round+'回合 -- 轮到你了！')}
 function onWin(){wins++;$('winCount').textContent=wins;const heal=Math.floor(Math.random()*21)+20;player.hp=Math.min(player.hp+heal,player.maxHp);if(wins>0&&wins%3===0){player.maxHp+=30;player.hp=Math.min(player.hp+30,player.maxHp);player.atk+=5;player.def+=3}updateHP();log('你击败了'+enemy.name+'！');animating=!1;$('skillBar').style.display='none';$('resultIcon').textContent='胜利';$('resultTitle').textContent='战斗胜利！';$('resultTitle').style.color='#ffd700';$('resultInfo').innerHTML='击败了 <b>'+enemy.name+'</b><br>当前胜场：<b>'+wins+'</b><br>当前HP：<b>'+player.hp+'/'+player.maxHp+'</b>';$('btnContinue').style.display='block';$('resultOverlay').style.display='flex'}
 function onLose(){animating=!1;$('skillBar').style.display='none';$('resultIcon').textContent='失败';$('resultTitle').textContent='战斗失败';$('resultTitle').style.color='#f44';$('resultInfo').innerHTML='被 <b>'+enemy.name+'</b> 击败<br>总胜场：<b>'+wins+'</b>';$('btnContinue').style.display='none';$('resultOverlay').style.display='flex'}
