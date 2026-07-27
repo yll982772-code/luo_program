@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>勇者传说 - 文字格斗</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a2e;color:#fff;min-height:100vh;overflow-x:hidden}
+.screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.screen.active{display:flex}
+.card{width:100%;max-width:380px;background:rgba(20,15,50,0.92);border:2px solid rgba(255,215,0,0.25);border-radius:20px;padding:32px 24px;text-align:center}
+.title{font-size:28px;font-weight:bold;color:#ffd700;margin-bottom:6px;text-shadow:0 0 16px rgba(255,215,0,0.35)}
+.subtitle{font-size:15px;color:#ccbbff;margin-bottom:24px}
+.row{display:flex;align-items:center;margin-bottom:16px}
+.row label{width:75px;font-size:14px;color:#bbaacc;text-align:right;margin-right:10px}
+.row input{flex:1;height:42px;background:rgba(0,0,0,0.35);border:2px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:15px;padding:0 14px;outline:none}
+.row input:focus{border-color:rgba(255,215,0,0.5)}
+input[type=number]{text-align:center}
+.captcha{display:inline-block;background:repeating-linear-gradient(45deg,#1a1040,#1a1040 4px,#221450 4px,#221450 8px);color:#ffdd44;font-size:22px;letter-spacing:6px;padding:10px 20px;border-radius:10px;border:2px dashed rgba(255,215,0,0.35);cursor:pointer;margin:8px 0 20px}
+.points{font-size:24px;font-weight:bold;color:#ffd700;margin-bottom:20px}
+.attr-row{display:flex;align-items:center;margin-bottom:18px}
+.attr-row span:first-child{width:70px;font-size:14px;color:#ccbbff;text-align:right;margin-right:10px}
+.attr-row input{width:60px;height:38px;background:rgba(0,0,0,0.35);border:2px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:15px;text-align:center;outline:none;margin:0 6px}
+.attr-row .hint{font-size:11px;color:#778;flex:1}
+.attr-row .stat{font-size:13px;color:#889}
+.btn{display:block;width:100%;height:48px;line-height:48px;border:none;border-radius:14px;font-size:17px;font-weight:bold;cursor:pointer;margin-top:16px;text-align:center}
+.btn-gold{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#3a2000}
+.btn-purple{background:linear-gradient(135deg,#9944ff,#6622cc);color:#fff}
+.link{font-size:14px;color:#aa99dd;margin-top:16px;cursor:pointer;text-decoration:underline}
+.battle-bg{background:linear-gradient(180deg,#1a0a3e 0,#2d1050 40%,#3a2060 70%,#1a3020 100%)}
+.battle-top{width:100%;display:flex;justify-content:space-between;padding:10px 16px;font-size:13px;color:#ccbbff}
+.field{flex:1;width:100%;display:flex;align-items:center;justify-content:space-around;padding:10px;position:relative}
+.char-slot{display:flex;flex-direction:column;align-items:center;width:130px;transition:transform .15s}
+.char-slot.lunge-left{transform:translateX(-30px)}
+.char-slot.lunge-right{transform:translateX(30px)}
+.char-slot.shake{animation:shake .3s}
+.hp-wrap{width:100%;margin-bottom:6px}
+.hp-name{font-size:12px;color:#ccbbff;text-align:center;display:block}
+.hp-outer{width:100%;height:10px;background:#333;border-radius:5px;overflow:hidden}
+.hp-inner{height:100%;border-radius:5px;transition:width .4s,background .4s}
+.hp-text{font-size:11px;color:#fff;text-align:center;display:block;margin-top:3px}
+.char-box{width:80px;height:80px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:bold}
+.char-player{background:linear-gradient(135deg,#ffe066,#ff9900);color:#3a2000}
+.char-warrior{background:linear-gradient(135deg,#4488ff,#2266cc);color:#fff}
+.char-assassin{background:linear-gradient(135deg,#7744cc,#442288);color:#fff}
+.char-tank{background:linear-gradient(135deg,#99aabb,#667788);color:#fff}
+.char-mage{background:linear-gradient(135deg,#cc44aa,#8822aa);color:#fff}
+.vs{font-size:26px;font-weight:bold;color:#ffd700;text-shadow:0 0 14px rgba(255,215,0,0.45)}
+.log{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);text-align:center;max-width:300px}
+.log-text{display:block;font-size:14px;color:#fff;background:rgba(0,0,0,0.5);padding:5px 12px;border-radius:7px;margin-bottom:4px}
+.dmg-pop{color:#ff6644;font-size:22px;font-weight:bold;animation:popUp .8s forwards}
+.dmg-pop.heal{color:#44ff44}
+@keyframes popUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-30px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.skill-bar{width:100%;display:flex;justify-content:space-around;padding:12px 10px;gap:10px}
+.skill-btn{flex:1;height:52px;border-radius:12px;border:2px solid rgba(255,255,255,0.18);background:rgba(20,10,50,0.7);color:#fff;font-size:14px;font-weight:bold;cursor:pointer}
+.skill-btn:disabled{opacity:.35}
+.skill-btn.pwr{border-color:#ff9944}
+.skill-btn.drn{border-color:#44ff44}
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:10}
+.overlay-card{width:85%;max-width:340px;background:rgba(20,15,50,0.95);border:2px solid rgba(255,215,0,0.25);border-radius:20px;padding:30px;text-align:center}
+.result-icon{font-size:50px;margin-bottom:8px}
+.result-title{font-size:26px;font-weight:bold;margin-bottom:12px}
+.result-info{font-size:15px;color:#ccbbff;margin-bottom:20px;line-height:1.8}
+.stats{background:rgba(0,0,0,0.4);border-radius:10px;padding:18px;margin:16px 0;line-height:2;font-size:15px;color:#ccbbff}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:12px;font-size:15px;z-index:100;color:#fff;pointer-events:none;opacity:0;transition:opacity .3s}
+.toast.success{background:#22aa44;opacity:1}
+.toast.error{background:#dd3333;opacity:1}
+</style>
+</head>
+<body>
+<div class="screen active" id="loginScreen"><div class="card">
+<div class="title">勇者传说</div><div class="subtitle">文字回合制格斗游戏</div>
+<div class="row"><label>用户名</label><input id="loginUser" placeholder="请输入用户名" maxlength="16"></div>
+<div class="row"><label>密  码</label><input id="loginPass" type="password" placeholder="请输入密码" maxlength="8"></div>
+<div class="row"><label>验证码</label><input id="captchaInput" placeholder="请输入验证码" maxlength="5"></div>
+<div class="captcha" id="captchaBox">ABCD1</div>
+<button class="btn btn-gold" onclick="doLogin()">登 录</button>
+<div class="link" onclick="showScreen('register')">没有账号？去注册</div>
+</div></div>
+<div class="screen" id="registerScreen"><div class="card">
+<div class="title">注册账号</div>
+<div class="row"><label>用户名</label><input id="regUser" placeholder="3~16位，含字母不可纯数字" maxlength="16"></div>
+<div class="row"><label>密  码</label><input id="regPass1" type="password" placeholder="3~8位，至少1字母+1数字" maxlength="8"></div>
+<div class="row"><label>确认密码</label><input id="regPass2" type="password" placeholder="请再次输入密码" maxlength="8"></div>
+<button class="btn btn-gold" onclick="doRegister()">注 册</button>
+<div class="link" onclick="showScreen('login')">已有账号？去登录</div>
+</div></div>
+<div class="screen" id="createScreen"><div class="card">
+<div class="title">创建角色</div><div class="subtitle">手动输入属性点数（合计20点）</div>
+<div class="points" id="remainPoints">剩余属性点：20</div>
+<div class="attr-row"><span>生命值</span><input type="number" id="attrHP" value="5" oninput="updateAttr()"><span class="hint">每点+10HP</span><span class="stat">HP: <b id="preHP">150</b></span></div>
+<div class="attr-row"><span>攻击力</span><input type="number" id="attrATK" value="8" oninput="updateAttr()"><span class="hint">每点+2ATK</span><span class="stat">ATK: <b id="preATK">26</b></span></div>
+<div class="attr-row"><span>防御力</span><input type="number" id="attrDEF" value="7" oninput="updateAttr()"><span class="hint">每点+1DEF</span><span class="stat">DEF: <b id="preDEF">7</b></span></div>
+<button class="btn btn-gold" onclick="startGame()">开始游戏</button>
+</div></div>
+<div class="screen battle-bg" id="battleScreen">
+<div class="battle-top"><span>胜场：<b id="winCount">0</b></span><span>第 <b id="battleNum">1</b> 场</span><span>第 <b id="roundNum">1</b> 回合</span></div>
+<div class="field">
+<div class="char-slot" id="playerSlot"><div class="hp-wrap"><span class="hp-name" id="pName">勇者</span><div class="hp-outer"><div class="hp-inner" id="pBar" style="width:100%;background:#4d4"></div></div><span class="hp-text" id="pHP">100/100</span></div><div class="char-box char-player" id="pChar">勇</div></div>
+<div class="vs">VS</div>
+<div class="log" id="logArea"></div>
+<div class="char-slot" id="enemySlot"><div class="hp-wrap"><span class="hp-name" id="eName">初级战士</span><div class="hp-outer"><div class="hp-inner" id="eBar" style="width:100%;background:#4d4"></div></div><span class="hp-text" id="eHP">80/80</span></div><div class="char-box char-warrior" id="eChar">战</div></div>
+</div>
+<div class="skill-bar" id="skillBar">
+<button class="skill-btn" onclick="playerAction(0)">普通攻击</button>
+<button class="skill-btn pwr" onclick="playerAction(1)">强力一击</button>
+<button class="skill-btn drn" onclick="playerAction(2)">生命汲取</button>
+</div>
+<div class="overlay" id="resultOverlay" style="display:none"><div class="overlay-card">
+<div class="result-icon" id="resultIcon"></div><div class="result-title" id="resultTitle"></div><div class="result-info" id="resultInfo"></div>
+<button class="btn btn-gold" id="btnContinue" onclick="continueBattle()" style="display:none">继续下一场游戏</button>
+<button class="btn btn-purple" id="btnEnd" onclick="endGame()">结束游戏</button>
+</div></div>
+</div>
+<div class="screen" id="thanksScreen"><div class="card">
+<div class="title">感谢你的游玩！</div><div class="stats" id="statsBox"></div>
+<div class="subtitle">期待你的再次挑战，勇者！</div>
+<button class="btn btn-gold" onclick="restartGame()">重新开始</button>
+</div></div>
+<div class="toast" id="toast"></div>
+<script>
+const ENEMIES=[{name:'初级战士',hp:80,maxHp:80,atk:15,def:10,skill:'猛击',cls:'char-warrior',ch:'战'},{name:'敏捷刺客',hp:60,maxHp:60,atk:20,def:5,skill:'快速攻击',cls:'char-assassin',ch:'刺'},{name:'重装坦克',hp:120,maxHp:120,atk:10,def:10,skill:'防御姿态',cls:'char-tank',ch:'坦'},{name:'神秘法师',hp:70,maxHp:70,atk:25,def:8,skill:'火球术',cls:'char-mage',ch:'法'}];
+let users=JSON.parse(localStorage.getItem('fg_users')||'[]'),curUser=null,player=null,enemy=null,enemyList=[],wins=0,battleCount=1,round=1,animating=!1,captcha='';
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id+'Screen').classList.add('active')}
+function $(id){return document.getElementById(id)}
+function toast(msg,ok){const t=$('toast');t.textContent=msg;t.className='toast '+(ok?'success':'error');setTimeout(()=>t.className='toast',1800)}
+function refreshCaptcha(){const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';let s='';for(let i=0;i<5;i++)s+=c[Math.floor(Math.random()*c.length)];captcha=s;$('captchaBox').textContent=s}
+refreshCaptcha();
+function doLogin(){const u=$('loginUser').value.trim(),p=$('loginPass').value,cap=$('captchaInput').value.trim();if(!u||!p)return toast('请输入用户名和密码',0);if(cap.toLowerCase()!==captcha.toLowerCase()){refreshCaptcha();$('captchaInput').value='';return toast('验证码错误',0)}const user=users.find(x=>x.username===u);if(!user)return toast('用户不存在',0);if(!user.status)return toast('账号已禁用',0);if(user.password!==p)return toast('密码错误',0);curUser=user;toast('登录成功！',1);setTimeout(()=>showScreen('create'),500)}
+function doRegister(){const u=$('regUser').value.trim(),p1=$('regPass1').value,p2=$('regPass2').value;if(u.length<3||u.length>16)return toast('用户名3~16位',0);if(!/[a-zA-Z]/.test(u))return toast('用户名需含字母',0);if(users.find(x=>x.username===u))return toast('用户名已存在',0);if(p1.length<3||p1.length>8)return toast('密码3~8位',0);if(!/[a-zA-Z]/.test(p1)||!/[0-9]/.test(p1))return toast('密码需含字母和数字',0);if(p1!==p2)return toast('两次密码不一致',0);users.push({username:u,password:p1,status:!0});localStorage.setItem('fg_users',JSON.stringify(users));toast('注册成功！',1);setTimeout(()=>{showScreen('login');$('regUser').value='';$('regPass1').value='';$('regPass2').value=''},500)}
+function updateAttr(){const hp=parseInt($('attrHP').value)||0,atk=parseInt($('attrATK').value)||0,def=parseInt($('attrDEF').value)||0,remain=20-(hp+atk+def);$('remainPoints').textContent='剩余属性点：'+Math.max(0,remain);$('preHP').textContent=100+hp*10;$('preATK').textContent=10+atk*2;$('preDEF').textContent=def}
+function startGame(){const hp=parseInt($('attrHP').value)||0,atk=parseInt($('attrATK').value)||0,def=parseInt($('attrDEF').value)||0;if(hp+atk+def!==20)return toast('必须刚好分配20点属性！',0);player={hp:100+hp*10,maxHp:100+hp*10,atk:10+atk*2,def:def};enemyList=ENEMIES.map(e=>({...e}));wins=0;battleCount=1;$('pName').textContent='勇者 '+curUser.username;$('pChar').className='char-box char-player';$('pChar').textContent='勇';showScreen('battle');$('resultOverlay').style.display='none';startBattle()}
+function startBattle(){if(wins>0)enemyList.forEach(e=>{e.maxHp+=10;e.hp=e.maxHp;e.atk+=3;e.def+=2;e.defending=!1});const t=enemyList[Math.floor(Math.random()*enemyList.length)];enemy={...t,defending:!1};round=1;$('winCount').textContent=wins;$('battleNum').textContent=battleCount;$('roundNum').textContent=round;$('eName').textContent=enemy.name;$('eChar').className='char-box '+enemy.cls;$('eChar').textContent=enemy.ch;updateHP();$('logArea').innerHTML='<span class=log-text>第'+battleCount+'场战斗！对手：'+enemy.name+'</span>';$('resultOverlay').style.display='none';setBtns(!1);animating=!1;$('skillBar').style.display='flex'}
+function calcDmg(a,d){return Math.max(a-d,1)}
+function updateHP(){const pp=Math.max(Math.round(player.hp/player.maxHp*100),0),ep=Math.max(Math.round(enemy.hp/enemy.maxHp*100),0);$('pBar').style.width=pp+'%';$('pBar').style.background=pp>50?'#4d4':pp>25?'#dd4':'#f44';$('pHP').textContent=player.hp+'/'+player.maxHp;$('eBar').style.width=ep+'%';$('eBar').style.background=ep>50?'#4d4':ep>25?'#dd4':'#f44';$('eHP').textContent=enemy.hp+'/'+enemy.maxHp}
+function setBtns(v){document.querySelectorAll('.skill-btn').forEach(b=>b.disabled=v)}
+function log(msg){const l=document.createElement('span');l.className='log-text';l.textContent=msg;$('logArea').appendChild(l);while($('logArea').children.length>4)$('logArea').removeChild($('logArea').firstChild)}
+function popDmg(v,hl){const d=document.createElement('span');d.className='dmg-pop'+(hl?' heal':'');d.textContent=(hl?'+':'-')+v;$('logArea').appendChild(d);setTimeout(()=>d.remove(),800)}
+function lunge(who,cb){const el=$(who+'Slot');el.classList.add(who==='player'?'lunge-right':'lunge-left');setTimeout(()=>{el.classList.remove(who==='player'?'lunge-right':'lunge-left');cb()},250)}
+function shake(who,cb){const el=$(who+'Slot');el.classList.add('shake');setTimeout(()=>{el.classList.remove('shake');cb()},300)}
+function playerAction(si){if(animating||!enemy)return;animating=!0;setBtns(!0);if(si===0){log('你使用了普通攻击！');lunge('player',()=>doHit(calcDmg(player.atk,enemy.def),'对'+enemy.name+'造成了'))}else if(si===1){if(player.hp<=10){animating=!1;setBtns(!1);return log('HP不足10！')}player.hp-=10;updateHP();log('你使用了强力一击！（消耗10HP）');lunge('player',()=>doHit(calcDmg(Math.floor(player.atk*1.8),enemy.def),'强力一击造成'))}else{if(player.hp<=10){animating=!1;setBtns(!1);return log('HP不足10！')}player.hp-=10;updateHP();log('你使用了生命汲取！（消耗10HP）');lunge('player',()=>{const h=Math.floor(Math.random()*31)+20;player.hp=Math.min(player.hp+h,player.maxHp);updateHP();popDmg(h,1);log('生命汲取恢复了'+h+'点HP！');afterPA()})}}
+function doHit(dmg,prefix){if(enemy.defending){const o=dmg;dmg=Math.max(Math.floor(dmg/2),1);enemy.defending=!1;if(o!==dmg)log('防御姿态减半了伤害！')}enemy.hp=Math.max(enemy.hp-dmg,0);updateHP();popDmg(dmg,0);log(prefix+dmg+'点伤害！');shake('enemy',()=>afterPA())}
+function afterPA(){if(enemy.hp<=0){onWin();return}setTimeout(()=>enemyTurn(),400)}
+function enemyTurn(){const act=Math.random()>=0.5?enemy.skill:'普通攻击';if(act==='普通攻击'){const d=calcDmg(enemy.atk,player.def);player.hp=Math.max(player.hp-d,0);log('敌人使用了普通攻击！');lunge('enemy',()=>{updateHP();popDmg(d,0);log('受到'+d+'点伤害！');shake('player',afterEA)})}else if(act==='猛击'){const d=calcDmg(Math.floor(enemy.atk*1.5),player.def);player.hp=Math.max(player.hp-d,0);log('敌人使用了猛击！（ATK*1.5）');lunge('enemy',()=>{updateHP();popDmg(d,0);log('猛击造成'+d+'点伤害！');shake('player',afterEA)})}else if(act==='快速攻击'){let d=0;for(let i=0;i<2;i++){const t=calcDmg(Math.floor(enemy.atk/2),player.def);d+=t;player.hp=Math.max(player.hp-t,0)}log('敌人使用了快速攻击！');lunge('enemy',()=>{updateHP();popDmg(d,0);log('快速攻击造成'+d+'点伤害！');shake('player',afterEA)})}else if(act==='防御姿态'){enemy.defending=!0;log('敌人进入了防御姿态！（下次受伤减半）');setTimeout(afterEA,700)}else if(act==='火球术'){const d=calcDmg(Math.floor(enemy.atk*1.8),player.def);player.hp=Math.max(player.hp-d,0);log('敌人使用了火球术！（ATK*1.8）');setTimeout(()=>{updateHP();popDmg(d,0);log('火球术造成'+d+'点伤害！');shake('player',afterEA)},400)}}
+function afterEA(){if(player.hp<=0){onLose();return}round++;$('roundNum').textContent=round;animating=!1;setBtns(!1);log('第'+round+'回合 -- 轮到你了！')}
+function onWin(){wins++;$('winCount').textContent=wins;const heal=Math.floor(Math.random()*21)+20;player.hp=Math.min(player.hp+heal,player.maxHp);if(wins>0&&wins%3===0){player.maxHp+=30;player.hp=Math.min(player.hp+30,player.maxHp);player.atk+=5;player.def+=3}updateHP();log('你击败了'+enemy.name+'！');animating=!1;$('skillBar').style.display='none';$('resultIcon').textContent='胜利';$('resultTitle').textContent='战斗胜利！';$('resultTitle').style.color='#ffd700';$('resultInfo').innerHTML='击败了 <b>'+enemy.name+'</b><br>当前胜场：<b>'+wins+'</b><br>当前HP：<b>'+player.hp+'/'+player.maxHp+'</b>';$('btnContinue').style.display='block';$('resultOverlay').style.display='flex'}
+function onLose(){animating=!1;$('skillBar').style.display='none';$('resultIcon').textContent='失败';$('resultTitle').textContent='战斗失败';$('resultTitle').style.color='#f44';$('resultInfo').innerHTML='被 <b>'+enemy.name+'</b> 击败<br>总胜场：<b>'+wins+'</b>';$('btnContinue').style.display='none';$('resultOverlay').style.display='flex'}
+function continueBattle(){battleCount++;startBattle()}
+function endGame(){$('statsBox').innerHTML='玩家：'+curUser.username+'<br>总胜场：'+wins+' | 总战斗：'+battleCount+'<br>最终属性 HP:'+player.hp+'/'+player.maxHp+' ATK:'+player.atk+' DEF:'+player.def;showScreen('thanks')}
+function restartGame(){player=null;enemy=null;wins=0;battleCount=1;showScreen('login');$('loginUser').value='';$('loginPass').value='';$('captchaInput').value='';refreshCaptcha()}
+</script></body></html>
